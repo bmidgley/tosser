@@ -360,7 +360,7 @@ void loop() {
   while(activate > 0) {
     clearDisplay();
   
-    myservo.attach(16);
+    myservo.attach(D0);
     for (pos = 0; pos < 128; pos += 1) {
       int y = angle_for(pos);
       display.setPixel(pos, HALF_HEIGHT - y);
