@@ -338,6 +338,10 @@ void configure_action() {
   configure_point(curve[2][1], 8);
 }
 
+int ymap(int y) {
+  return map(y, 0, 63, 0, 180);
+}
+
 void loop() {
   int index = 0;
   char value;
@@ -365,9 +369,10 @@ void loop() {
       int y = angle_for(pos);
       display.setPixel(pos, HALF_HEIGHT - y);
       display.display();
-      myservo.write(180*y/64);
+      myservo.write(ymap(y));
       delay(2);
     }
+    myservo.write(ymap(angle_for(0)));
     activate = 0;
 
     if ( digitalRead(TRIGGER_PIN) == LOW ) {
