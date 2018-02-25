@@ -317,7 +317,7 @@ void configure_point(int &p, int divisor) {
   }
 
   while( digitalRead(TRIGGER_PIN) == HIGH) {
-    p = analogRead(A0) / divisor;
+    p = (1024-analogRead(A0)) / divisor;
     paint_display();
     display.display();
     delay(1);
@@ -332,10 +332,10 @@ void configure_action() {
   display.drawString(0, 25, String("Release the button now"));
   display.display();
 
-  configure_point(curve[0][1], 8);
-  configure_point(curve[1][0], 4);
-  configure_point(curve[1][1], 8);
-  configure_point(curve[2][1], 8);
+  configure_point(curve[0][1], 16);
+  configure_point(curve[1][0], 8);
+  configure_point(curve[1][1], 16);
+  configure_point(curve[2][1], 16);
 }
 
 int ymap(int y) {
