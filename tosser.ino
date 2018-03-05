@@ -72,7 +72,7 @@ void mpu_read() {
   Wire.write(0x3B);  // starting with register 0x3B (ACCEL_XOUT_H)
   Wire.endTransmission(false);
   Wire.requestFrom(MPU_addr,14,true);  // request a total of 14 registers
-  AcX=Wire.read()<<8|Wire.read();  // 0x3B (ACCEL_XOUT_H) & 0x3C (ACCEL_XOUT_L)    
+  AcX=Wire.read()<<8|Wire.read();  // 0x3B (ACCEL_XOUT_H) & 0x3C (ACCEL_XOUT_L)
   AcY=Wire.read()<<8|Wire.read();  // 0x3D (ACCEL_YOUT_H) & 0x3E (ACCEL_YOUT_L)
   AcZ=Wire.read()<<8|Wire.read();  // 0x3F (ACCEL_ZOUT_H) & 0x40 (ACCEL_ZOUT_L)
   Tmp=Wire.read()<<8|Wire.read();  // 0x41 (TEMP_OUT_H) & 0x42 (TEMP_OUT_L)
@@ -232,6 +232,7 @@ void setup() {
   
   wifiManager.autoConnect(name);
   Serial.println("stored wifi connected");
+  WiFi.setAutoConnect(true);
 
   strcpy(name, custom_name.getValue());
   strcpy(mqtt_server, custom_mqtt_server.getValue());
@@ -377,7 +378,11 @@ void configure_action() {
 }
 
 int ymap(int y) {
-  return map(y, 0, 63, 0, 180);
+  return map(y, 0, 63, 5, 175);
+}
+
+int flash_pressed() {
+  return digitalRead(TRIGGER_PIN) == LOW;
 }
 
 void loop() {
@@ -395,44 +400,29 @@ void loop() {
 
   long now = millis();
 
-  if ( digitalRead(TRIGGER_PIN) == LOW ) {
-    activate = 1;
+  if (flash_pressed()) {
+    configure_action();
   }
 
-  while(activate > 0) {
-    clearDisplay();
-  
-    myservo.attach(D0);
-    for (pos = 0; pos < 128; pos += 1) {
-      int y = angle_for(pos);
-      display.setPixel(pos, HALF_HEIGHT - y);
-      display.display();
-      myservo.write(ymap(y));
-      delay(2);
-    }
-    myservo.write(ymap(angle_for(0)));
-    activate = 0;
+  clearDisplay();
 
-    if ( digitalRead(TRIGGER_PIN) == LOW ) {
-      reconfigure_counter += 1;
-      Serial.printf("reconfigure counter %d\n", reconfigure_counter);
-    } else {
-      reconfigure_counter = 0;
-    }
-
-    if(reconfigure_counter > 2) {
-      configure_action();
-      reconfigure_counter = 0;
-    }
-
-    paint_display();
+  myservo.attach(D0);
+  for (pos = 0; pos < 128; pos += 1) {
+    int y = angle_for(pos);
+    display.setPixel(pos, HALF_HEIGHT - y);
+    display.display();
+    myservo.write(ymap(y));
+    delay(analogRead(A0));
+    if(flash_pressed()) break;
+    mpu_read();
   }
+  myservo.write(ymap(angle_for(0)));
+  paint_display();
+
   if (now - lastMsg < reportGap * 1000) {
     return;
   }
   lastMsg = now;
-  mpu_read();
-  mpu_display();
 
   paint_display();
 }
